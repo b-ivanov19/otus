@@ -60,7 +60,8 @@ line vty 0 4
 password cisco
 login
 banner motd @--- Unauthorized access is strictly prohibited ---@
-clock set 19:30:00 03 feb 2026
+exit
+clock set 17:05:00 03 feb 2026
 copy running-config startup-config
 ```
 #### Шаг 3. Настройте базовые параметры каждого коммутатора
@@ -78,14 +79,15 @@ copy running-config startup-config
 enable
 configure terminal
 no ip domain-lookup
-hostname S1
+hostname S2
 service password-encryption
 line console 0
 password cisco
 login
 enable secret class
 banner motd @--- Unauthorized access is strictly prohibited ---@
-clock set 19:35:00 03 feb 2026
+exit
+clock set 17:06:00 03 feb 2026
 copy running-config startup-config
 ```
 **Повторяем процедуру для второго коммутатора.**
@@ -106,9 +108,24 @@ name Parking_Lot
 vlan 1000
 name own
 ```
+Настраиваем интерфейс управления и шлюз по умолчанию на каждом коммутаторе, используя информацию об IP-адресе в таблице адресации. 
+```
+interface vlan 10
+ip address 192.168.10.11 255.255.255.0
+no shutdown
+exit
+ip default-gateway 192.168.10.1
+```
+Назначаем все неиспользуемые порты коммутатора VLAN Parking_Lot, настраиваем их для статического режима доступа и административно деактивируем их.
+```
+interface range g0/1 - 2, fa0/2 - 4, fa0/7 - 24
+switchport mode access
+switchport access vlan 999
+shutdown
+```
+**Повторяем процедуры для второго коммутатора.**
+#### Шаг 2. Назначаем сети VLAN соответствующим интерфейсам коммутатора
 
-b.	Настройте интерфейс управления и шлюз по умолчанию на каждом коммутаторе, используя информацию об IP-адресе в таблице адресации. 
-c.	Назначьте все неиспользуемые порты коммутатора VLAN Parking_Lot, настройте их для статического режима доступа и административно деактивируйте их.
 
 
 
