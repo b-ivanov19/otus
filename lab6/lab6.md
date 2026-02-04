@@ -79,7 +79,7 @@ copy running-config startup-config
 enable
 configure terminal
 no ip domain-lookup
-hostname S2
+hostname S1
 service password-encryption
 line console 0
 password cisco
@@ -197,12 +197,19 @@ switchport trunk allowed vlan 10,20,30,1000
 ```
 Port        Mode         Encapsulation  Status        Native vlan
 Fa0/1       on           802.1q         trunking      1000
+Fa0/5       on           802.1q         trunking      1000
+
 Port        Vlans allowed on trunk
 Fa0/1       10,20,30,1000
+Fa0/5       10,20,30,1000
+
 Port        Vlans allowed and active in management domain
 Fa0/1       10,20,30,1000
+Fa0/5       10,20,30,1000
+
 Port        Vlans in spanning tree forwarding state and not pruned
 Fa0/1       10,20,30,1000
+Fa0/5       10,20,30,1000
 ```
 ### 4. Настройка маршрутизации между сетями VLAN
 #### Шаг 1. Настраиваем маршрутизатор.
@@ -248,9 +255,12 @@ Vlan1                      unassigned      YES unset  administratively down down
 ```
 ### 5. Проверьте, работает ли маршрутизация между VLAN
 #### Шаг 1. Выполняем тесты с PC-A.
-Отправляем эхо-запрос с PC-A на шлюз по умолчанию
-Отправляем эхо-запрос с PC-A на PC-B
-Отправляем команду ping с компьютера PC-A на коммутатор S2
+Отправляем эхо-запрос с PC-A на шлюз по умолчанию    
+Отправляем эхо-запрос с PC-A на PC-B     
+Отправляем команду ping с компьютера PC-A на коммутатор S2     
+```
+Reply from 192.168.20.1: Destination host unreachable.
+```
 #### Шаг 2. Проходим тесты с PC-B
 
 
