@@ -125,9 +125,96 @@ shutdown
 ```
 **Повторяем процедуры для второго коммутатора.**
 #### Шаг 2. Назначаем сети VLAN соответствующим интерфейсам коммутатора
+Назначаем используемые порты соответствующей VLAN (указанной в таблице VLAN выше) и настраиваем их для режима статического доступа.      
+Для коммутатора S1:
+```
+interface fa0/6
+switchport mode access
+switchport access vlan 20
+```
+Для коммутатора S2:
+```
+interface fa0/18
+switchport mode access
+switchport access vlan 30
+```
+Убеждаемся, что VLAN назначены на правильные интерфейсы, используем команду ***show vlan brief***.
+```
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Fa0/1, Fa0/5
+10   Control                          active    
+20   Sales                            active    Fa0/6
+30   Operations                       active    
+999  Parking_Lot                      active    Fa0/2, Fa0/3, Fa0/4, Fa0/7
+                                                Fa0/8, Fa0/9, Fa0/10, Fa0/11
+                                                Fa0/12, Fa0/13, Fa0/14, Fa0/15
+                                                Fa0/16, Fa0/17, Fa0/18, Fa0/19
+                                                Fa0/20, Fa0/21, Fa0/22, Fa0/23
+                                                Fa0/24, Gig0/1, Gig0/2
+1000 own                              active    
+1002 fddi-default                     active    
+1003 token-ring-default               active    
+1004 fddinet-default                  active    
+1005 trnet-default                    active
+```
+### 3. Конфигурация магистрального канала стандарта 802.1Q между коммутаторами
+#### Шаг 1. Вручную настраиваем магистральный интерфейс F0/1 на коммутаторах S1 и S2.
+Настраиваем статический транкинг на интерфейсе F0/1 для обоих коммутаторов.    
+Устанавливаем native VLAN 1000 на обоих коммутаторах.    
+Указываем, что VLAN 10, 20, 30 и 1000 могут проходить по транку.    
+```
+interface fa0/1
+switchport mode trunk
+switchport trunk native vlan 1000
+switchport trunk allowed vlan 10,20,30,1000
+```
+Проверяем транки, native VLAN и разрешенные VLAN через транк, используя команду ***show interface status***.
+```
+Port      Name               Status       Vlan       Duplex  Speed Type
+Fa0/1                        connected    trunk      auto    auto  10/100BaseTX
+Fa0/2                        disabled     999        auto    auto  10/100BaseTX
+Fa0/3                        disabled     999        auto    auto  10/100BaseTX
+Fa0/4                        disabled     999        auto    auto  10/100BaseTX
+Fa0/5                        notconnect   1          auto    auto  10/100BaseTX
+Fa0/6                        connected    20         auto    auto  10/100BaseTX
+Fa0/7                        disabled     999        auto    auto  10/100BaseTX
+Fa0/8                        disabled     999        auto    auto  10/100BaseTX
+Fa0/9                        disabled     999        auto    auto  10/100BaseTX
+Fa0/10                       disabled     999        auto    auto  10/100BaseTX
+...
+```
+#### Шаг 2. Вручную настраиваем магистральный интерфейс F0/5 на коммутаторе S1.
+Настраиваем интерфейс S1 F0/5 с теми же параметрами транка, что и F0/1. Это транк до маршрутизатора.
+```
+interface fa0/5
+switchport mode trunk
+switchport trunk native vlan 1000
+switchport trunk allowed vlan 10,20,30,1000
+```
+Сохраняем текущую конфигурацию в файл загрузочной конфигурации с использованием команды ***copy running-config startup-config***.    
+Проверяем транкинг: ***show interfaces trunk***.
+```
+Port        Mode         Encapsulation  Status        Native vlan
+Fa0/1       on           802.1q         trunking      1000
+Port        Vlans allowed on trunk
+Fa0/1       10,20,30,1000
+Port        Vlans allowed and active in management domain
+Fa0/1       10,20,30,1000
+Port        Vlans in spanning tree forwarding state and not pruned
+Fa0/1       10,20,30,1000
+```
+### 4. Настройка маршрутизации между сетями VLAN
+#### Шаг 1. Настраиваем маршрутизатор.
+Активируем интерфейс G0/0/1 на маршрутизаторе.
+```
+int g0/0/1
+no shutdown
+```
+Настраиваем подинтерфейсы для каждой VLAN, как указано в таблице IP-адресации. Все подинтерфейсы используют инкапсуляцию 802.1Q. Убеждаемся, что подинтерфейсу для native VLAN не назначен IP-адрес. Включаем описание для каждого подинтерфейса.
 
 
-
+Убеждаемся, что вспомогательные интерфейсы работают
 
 
 
