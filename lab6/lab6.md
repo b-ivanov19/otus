@@ -106,7 +106,7 @@ name Operations
 vlan 999
 name Parking_Lot
 vlan 1000
-name own
+name native
 ```
 Настраиваем интерфейс управления и шлюз по умолчанию на каждом коммутаторе, используя информацию об IP-адресе в таблице адресации. 
 ```
@@ -152,7 +152,7 @@ VLAN Name                             Status    Ports
                                                 Fa0/16, Fa0/17, Fa0/18, Fa0/19
                                                 Fa0/20, Fa0/21, Fa0/22, Fa0/23
                                                 Fa0/24, Gig0/1, Gig0/2
-1000 own                              active    
+1000 native                           active    
 1002 fddi-default                     active    
 1003 token-ring-default               active    
 1004 fddinet-default                  active    
@@ -210,11 +210,55 @@ Fa0/1       10,20,30,1000
 ```
 int g0/0/1
 no shutdown
+no ip address
 ```
 Настраиваем подинтерфейсы для каждой VLAN, как указано в таблице IP-адресации. Все подинтерфейсы используют инкапсуляцию 802.1Q. Убеждаемся, что подинтерфейсу для native VLAN не назначен IP-адрес. Включаем описание для каждого подинтерфейса.
+```
+interface g0/0/1.10
+encapsulation dot1Q 10
+ip address 192.168.10.1 255.255.255.0
+description VLAN_10_Control
+exit
+interface g0/0/1.20
+encapsulation dot1Q 20
+ip address 192.168.20.1 255.255.255.0
+description VLAN_20_Sales
+exit
+interface g0/0/1.30
+encapsulation dot1Q 30
+ip address 192.168.30.1 255.255.255.0
+description VLAN_30_Operations
+exit
+interface g0/0/1.1000
+encapsulation dot1Q 1000 native
+description VLAN_1000_native
+exit
+ip routing
+```
+Убеждаемся, что вспомогательные интерфейсы работают, используя команду ***show ip interface brief***.
+```
+Interface                  IP-Address      OK? Method Status                Protocol 
+GigabitEthernet0/0/0       unassigned      YES unset  administratively down down 
+GigabitEthernet0/0/1       unassigned      YES unset  up                    up 
+GigabitEthernet0/0/1.10    192.168.10.1    YES manual up                    up 
+GigabitEthernet0/0/1.20    192.168.20.1    YES manual up                    up 
+GigabitEthernet0/0/1.30    192.168.30.1    YES manual up                    up 
+GigabitEthernet0/0/1.1000  unassigned      YES unset  up                    up 
+Vlan1                      unassigned      YES unset  administratively down down
+```
+### 5. Проверьте, работает ли маршрутизация между VLAN
+#### Шаг 1. Выполняем тесты с PC-A.
+Отправляем эхо-запрос с PC-A на шлюз по умолчанию
+Отправляем эхо-запрос с PC-A на PC-B
+Отправляем команду ping с компьютера PC-A на коммутатор S2
+#### Шаг 2. Проходим тесты с PC-B
 
 
-Убеждаемся, что вспомогательные интерфейсы работают
+
+
+
+
+
 
 
 
