@@ -239,19 +239,20 @@ exit
 interface g0/0/1.1000
 encapsulation dot1Q 1000 native
 description VLAN_1000_native
+no ip address
 exit
 ip routing
 ```
 Убеждаемся, что вспомогательные интерфейсы работают, используя команду ***show ip interface brief***.
 ```
 Interface                  IP-Address      OK? Method Status                Protocol 
-GigabitEthernet0/0/0       unassigned      YES unset  administratively down down 
-GigabitEthernet0/0/1       unassigned      YES unset  up                    up 
+GigabitEthernet0/0/0       unassigned      YES NVRAM  administratively down down 
+GigabitEthernet0/0/1       unassigned      YES NVRAM  up                    up 
 GigabitEthernet0/0/1.10    192.168.10.1    YES manual up                    up 
 GigabitEthernet0/0/1.20    192.168.20.1    YES manual up                    up 
 GigabitEthernet0/0/1.30    192.168.30.1    YES manual up                    up 
 GigabitEthernet0/0/1.1000  unassigned      YES unset  up                    up 
-Vlan1                      unassigned      YES unset  administratively down down
+Vlan1                      unassigned      YES unset  administratively down down 
 ```
 ### 5. Проверьте, работает ли маршрутизация между VLAN
 #### Шаг 1. Выполняем тесты с PC-A.
