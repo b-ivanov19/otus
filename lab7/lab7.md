@@ -67,18 +67,112 @@ Sending 5, 100-byte ICMP Echos to 192.168.1.3, timeout is 2 seconds:
 Success rate is 100 percent (5/5), round-trip min/avg/max = 0/0/1 ms
 ```
 ### 2. Определение корневого моста
+#### Шаг 1:	Отключите все порты на коммутаторах.
+```
+interface range g0/1 - 2
+shutdown
+interface range fa0/1 - 24
+shutdown
+```
+Повторяем для всех коммутаторов.    
+#### Шаг 2:	Настройте подключенные порты в качестве транковых.
+```
+interface range fa0/1 - 4
+switchport mode trunk
+```
+Повторяем для всех коммутаторов.    
+#### Шаг 3:	Включите порты F0/2 и F0/4 на всех коммутаторах.
+```
+interface range fa0/2, fa0/4
+no shutdown
+```
+Повторяем для всех коммутаторов.    
+#### Шаг 4:	Отобразите данные протокола spanning-tree.
+Вводим команду ***show spanning-tree*** на всех трех коммутаторах.    
+**Коммутатор S1:**
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             Cost        19
+             Port        2(FastEthernet0/2)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
 
-Шаг 1:	Отключите все порты на коммутаторах.
-Шаг 2:	Настройте подключенные порты в качестве транковых.
-Шаг 3:	Включите порты F0/2 и F0/4 на всех коммутаторах.
-Шаг 4:	Отобразите данные протокола spanning-tree.
-Введите команду show spanning-tree на всех трех коммутаторах. Приоритет идентификатора моста рассчитывается путем сложения значений приоритета и расширенного идентификатора системы. Расширенным идентификатором системы всегда является номер сети VLAN. В примере ниже все три коммутатора имеют равные значения приоритета идентификатора моста (32769 = 32768 + 1, где приоритет по умолчанию = 32768, номер сети VLAN = 1); следовательно, коммутатор с самым низким значением MAC-адреса становится корневым мостом (в примере — S2).
-S1# show spanning-tree
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0090.0C16.9D97
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
 
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Root FWD 19        128.2    P2p
+Fa0/4            Altn BLK 19        128.4    P2p
+```
+**Коммутатор S2:**
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             This bridge is the root
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
 
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0001.6394.5B10
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
 
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Desg FWD 19        128.2    P2p
+Fa0/4            Desg FWD 19        128.4    P2p
+```
+**Коммутатор S3:**
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             Cost        19
+             Port        2(FastEthernet0/2)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
 
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     000A.4171.0536
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
 
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/4            Desg FWD 19        128.4    P2p
+Fa0/2            Root FWD 19        128.2    P2p
+```
+MAC-адреса коммутаторв:     
+- S1: 0090.0C16.9D97     
+- S2: 0001.6394.5B10     
+- S3: 000A.4171.0536    
+Отмечаем роль и состояние всех активных портов на каждом коммутаторе:
+
+| Коммутатор | Порт    | Роль             | Состояние |
+|------------|---------|------------------|-----------|
+| S1         | Fa0/2  | Root Port        | Forwarding|
+| S1         | Fa0/4  | Alternate Port   | Blocking|
+| S2         | Fa0/2  | Designated Port  | Forwarding|
+| S2         | Fa0/4  | Designated Port  | Forwarding|
+| S3         | Fa0/2  | Root Port        | Forwarding|
+| S3         | Fa0/4  | Designated Port  | Forwarding|
+### 3. Наблюдение за процессом выбора протоколом STP порта, исходя из стоимости портов
+#### Шаг 1. Определите коммутатор с заблокированным портом
+Мы отметили, что заблокирован порт Fa0/4 на коммутаторе S1.
+#### Шаг 2. Измените стоимость порта
+Изменяем стоимость активного (не заблокированного) порта на коммутаторе S1 до 18:   
+```
+interface fa0/2
+spanning-tree vlan 1 cost 18
+```
+#### Шаг 3. Просмотрите изменения протокола spanning-tree
+Повторно выполняем команду ***show spanning-tree*** на обоих коммутаторах некорневого моста (S1 и S3).    
 
 
 
