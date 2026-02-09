@@ -174,13 +174,121 @@ spanning-tree vlan 1 cost 18
 #### Шаг 3. Просмотрите изменения протокола spanning-tree
 Повторно выполняем команду ***show spanning-tree*** на обоих коммутаторах некорневого моста (S1 и S3).    
 S1# **show spanning-tree**
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             Cost        18
+             Port        2(FastEthernet0/2)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
 
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0090.0C16.9D97
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
 
-Почему протокол spanning-tree заменяет ранее заблокированный порт на назначенный порт и блокирует порт, который был назначенным портом на другом коммутаторе?
-Шаг 4:	Удалите изменения стоимости порта.
-a.	Выполните команду no spanning-tree vlan 1 cost 18 режима конфигурации интерфейса, чтобы удалить запись стоимости, созданную ранее.
-S1(config)# interface f0/2
-S1(config-if)# no spanning-tree vlan 1 cost 18
-b.	Повторно выполните команду show spanning-tree, чтобы подтвердить, что протокол STP сбросил порт на коммутаторе некорневого моста, вернув исходные настройки порта. Протоколу STP требуется примерно 30 секунд, чтобы завершить процесс перевода порта.
-Часть 4:	Наблюдение за процессом выбора протоколом STP порта, исходя из приоритета портов
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Root FWD 18        128.2    P2p
+Fa0/4            Desg FWD 19        128.4    P2p
+```
+S3# **show spanning-tree**
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             Cost        19
+             Port        2(FastEthernet0/2)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
 
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     000A.4171.0536
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/4            Altn BLK 19        128.4    P2p
+Fa0/2            Root FWD 19        128.2    P2p
+```
+После уменьшения стоимости порта fa0/2 на коммутаторе S1, STP пересчитал топологию для выбора наиболее эффективного пути, поэтому изменились статусы портов на коммутаторах.
+#### Шаг 4:	Удалите изменения стоимости порта.
+Удаляем запись стоимости порта fa0/2 на коммутаторе S1, созданную ранее.
+```
+interface f0/2
+no spanning-tree vlan 1 cost 18
+```
+Повторно выполняем команду ***show spanning-tree***, чтобы подтвердить, что протокол STP сбросил порт на коммутаторе некорневого моста, вернув исходные настройки порта.
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             Cost        19
+             Port        2(FastEthernet0/2)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0090.0C16.9D97
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Root FWD 19        128.2    P2p
+Fa0/4            Altn BLK 19        128.4    P2p
+```
+### 4:	Наблюдение за процессом выбора протоколом STP порта, исходя из приоритета портов
+Включаем порты f0/1 и f0/3 на всех коммутаторах для активации избыточных путей.    
+```
+interface range fa0/1, fa0/3
+no shutdown
+```
+Повторяем для всех коммутаторов.     
+Ждем 30 секунд, чтобы протокол STP завершил процесс перевода портов, затем выполняем команду ***show spanning-tree*** на коммутаторах некорневого моста (S1 и S3).
+S1# **show spanning-tree**
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             Cost        19
+             Port        1(FastEthernet0/1)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0090.0C16.9D97
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Altn BLK 19        128.2    P2p
+Fa0/4            Altn BLK 19        128.4    P2p
+Fa0/1            Root FWD 19        128.1    P2p
+Fa0/3            Altn BLK 19        128.3    P2p
+```
+S3# **show spanning-tree**
+```
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.6394.5B10
+             Cost        19
+             Port        1(FastEthernet0/1)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     000A.4171.0536
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/1            Root FWD 19        128.1    P2p
+Fa0/3            Desg FWD 19        128.3    P2p
+Fa0/4            Desg FWD 19        128.4    P2p
+Fa0/2            Altn BLK 19        128.2    P2p
+```
