@@ -173,7 +173,7 @@ spanning-tree vlan 1 cost 18
 ```
 #### Шаг 3. Просмотрите изменения протокола spanning-tree
 Повторно выполняем команду ***show spanning-tree*** на обоих коммутаторах некорневого моста (S1 и S3).    
-
+S1# **show spanning-tree**
 
 
 
