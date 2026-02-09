@@ -41,8 +41,6 @@ banner motd @--- Unauthorized access is strictly prohibited ---@
 ```
 line console 0
 logging synchronous
-exec-timeout 0 0
-length 0
 ```
 Задаем IP-адрес, указанный в таблице адресации для VLAN 1.
 ```
@@ -52,14 +50,23 @@ no shutdown
 ```
 Сохраняем текущую конфигурацию в файл загрузочной конфигурации с использованием команды ***copy running-config startup-config***.    
 **Повторяем процедуру для каждого коммутатора.**
-### Шаг 4:	Проверьте связь.
+#### Шаг 4:	Проверьте связь.
+Проверяем способность устройств обмениваться эхо-запросами.    
+Эхо запросы от коммутатора S1 до коммутаторов S2 и S3, а также от коммутатора S2 до коммутатора S3 выполняются успешно.
+```
+S1#ping 192.168.1.2
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.2, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 0/0/0 ms
 
-
-
-
-
-
-
+S1#ping 192.168.1.3
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.3, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 0/0/1 ms
+```
+### 2. Определение корневого моста
 
 
 
