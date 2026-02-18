@@ -289,28 +289,98 @@ Trunking VLANs Enabled: 100,200,1000
 ***Какой IP-адрес был бы у ПК, если бы он был подключен к сети с помощью DHCP?*** У ПК был бы адрес 169.254... что означает наличие сети, но ответа от DHCP-сервера нет.
 ### 2. Настройка и проверка двух серверов DHCPv4 на R1
 #### Шаг 1.	Настройте R1 с пулами DHCPv4 для двух поддерживаемых подсетей. Ниже приведен только пул DHCP для подсети A
-a.	Исключите первые пять используемых адресов из каждого пула адресов.
-Откройте окно конфигурации
-b.	Создайте пул DHCP (используйте уникальное имя для каждого пула).
-c.	Укажите сеть, поддерживающую этот DHCP-сервер.
-d.	В качестве имени домена укажите CCNA-lab.com.
-e.	Настройте соответствующий шлюз по умолчанию для каждого пула DHCP.
-f.	Настройте время аренды на 2 дня 12 часов и 30 минут.
-g.	Затем настройте второй пул DHCPv4, используя имя пула R2_Client_LAN и вычислите сеть, маршрутизатор по умолчанию, и используйте то же имя домена и время аренды, что и предыдущий пул DHCP.
+Исключаем первые пять используемых адресов из каждого пула адресов.    
+Создаем пул DHCP (используем уникальное имя для каждого пула).    
+Указываем сеть, поддерживающую этот DHCP-сервер.     
+В качестве имени домена указываем CCNA-lab.com.     
+Настраиваем соответствующий шлюз по умолчанию для каждого пула DHCP.     
+Настраиваем время аренды на 2 дня 12 часов и 30 минут.    
+```
+ip dhcp excluded-address 192.168.1.1 192.168.1.5
+ip dhcp pool R1_Client_LAN
+network 192.168.1.0 255.255.255.192
+domain-name CCNA-lab.com
+default-router 192.168.1.1
+lease 2 12 30
+```
+Настраиваем второй пул DHCPv4, используя имя пула R2_Client_LAN и ранее вычисленную сеть, маршрутизатор по умолчанию, используем то же имя домена и время аренды, что и предыдущий пул DHCP.
+```
+ip dhcp excluded-address 192.168.1.97 192.168.1.101
+ip dhcp pool R2_Client_LAN
+network 192.168.1.96 255.255.255.240
+domain-name CCNA-lab.com
+default-router 192.168.1.97
+lease 2 12 30
+```
 #### Шаг 2.	Сохраните конфигурацию.
-Сохраните текущую конфигурацию в файл загрузочной конфигурации.
-Закройте окно настройки.
+Сохраняем текущую конфигурацию в файл загрузочной конфигурации с помощью команды ***copy running-config startup-config***.
 #### Шаг 3.	Проверка конфигурации сервера DHCPv4
-a.	Чтобы просмотреть сведения о пуле, выполните команду show ip dhcp pool .
-b.	Выполните команду show ip dhcp bindings для проверки установленных назначений адресов DHCP.
-c.	Выполните команду show ip dhcp server statistics для проверки сообщений DHCP.
+Чтобы просмотреть сведения о пуле, выполняем команду show ip dhcp pool R1_Client_LAN.
+```
+Pool R1_Client_LAN :
+ Utilization mark (high/low)    : 100 / 0
+ Subnet size (first/next)       : 0 / 0 
+ Total addresses                : 62
+ Leased addresses               : 0
+ Excluded addresses             : 1
+ Pending event                  : none
+ 1 subnet is currently in the pool
+ Current index        IP address range                    Leased/Excluded/Total
+ 192.168.1.1          192.168.1.1      - 192.168.1.62      0    / 1     / 62
+
+Pool R2_Client_LAN :
+ Utilization mark (high/low)    : 100 / 0
+ Subnet size (first/next)       : 0 / 0 
+ Total addresses                : 14
+ Leased addresses               : 1
+ Excluded addresses             : 1
+ Pending event                  : none
+ 1 subnet is currently in the pool
+ Current index        IP address range                    Leased/Excluded/Total
+ 192.168.1.97         192.168.1.97     - 192.168.1.110     1    / 1     / 14
+```
+Выполняем команду ***show ip dhcp bindings*** для проверки установленных назначений адресов DHCP.
+```
+R1#show ip dhcp binding
+IP address       Client-ID/              Lease expiration        Type
+                 Hardware address
+192.168.1.6      0060.4751.1A80           --                     Automatic
+
+R2#show ip dhcp binding
+IP address       Client-ID/              Lease expiration        Type
+                 Hardware address
+192.168.1.102    0030.F2BD.862C           --                     Automatic
+```
+Выполняем команду ***show ip dhcp server statistics*** для проверки сообщений DHCP.
+```
+Не существует такой команды в CPT
+```
 #### Шаг 4.	Попытка получить IP-адрес от DHCP на PC-A
-a.	Из командной строки компьютера PC-A выполните команду ipconfig /all.
-b.	После завершения процесса обновления выполните команду ipconfig для просмотра новой информации об IP-адресе.
-c.	Проверьте подключение с помощью пинга IP-адреса интерфейса R0 G0/0/1.
-
-
-
+Из командной строки компьютера PC-A выполняем команду ipconfig /all.
+```
+Connection-specific DNS Suffix..: CCNA-lab.com
+   Physical Address................: 0060.4751.1A80
+   Link-local IPv6 Address.........: FE80::260:47FF:FE51:1A80
+   IPv6 Address....................: ::
+   IPv4 Address....................: 192.168.1.6
+   Subnet Mask.....................: 255.255.255.192
+   Default Gateway.................: ::
+                                     192.168.1.1
+   DHCP Servers....................: 192.168.1.1
+```
+Проверяем подключение с помощью пинга IP-адреса интерфейса R2 G0/0/1.
+```
+C:\>ping 192.168.1.97
+Pinging 192.168.1.97 with 32 bytes of data:
+Request timed out.
+Reply from 192.168.1.97: bytes=32 time<1ms TTL=254
+Reply from 192.168.1.97: bytes=32 time<1ms TTL=254
+Reply from 192.168.1.97: bytes=32 time<1ms TTL=254
+Ping statistics for 192.168.1.97:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+```
 
 
 
