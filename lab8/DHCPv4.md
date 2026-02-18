@@ -339,7 +339,7 @@ Pool R2_Client_LAN :
  Current index        IP address range                    Leased/Excluded/Total
  192.168.1.97         192.168.1.97     - 192.168.1.110     0    / 2     / 14
 ```
-Выполняем команду ***show ip dhcp bindings*** для проверки установленных назначений адресов DHCP.
+Выполняем команду ***show ip dhcp binding*** для проверки установленных назначений адресов DHCP.
 ```
 R1#show ip dhcp binding
 IP address       Client-ID/              Lease expiration        Type
@@ -378,45 +378,43 @@ Approximate round trip times in milli-seconds:
 ```
 ### 3. Настройка и проверка DHCP-ретрансляции на R2
 #### Шаг 1. Настройка R2 в качестве агента DHCP-ретрансляции для локальной сети на G0/0/1
-a.	Настройте команду ip helper-address на G0/0/1, указав IP-адрес G0/0/0 R1.
-Откройте окно конфигурации
-b.	Сохраните конфигурацию.
-Шаг 2.	Попытка получить IP-адрес от DHCP на PC-B
-a.	Из командной строки компьютера PC-B выполните команду ipconfig /all.
-b.	После завершения процесса обновления выполните команду ipconfig для просмотра новой информации об IP-адресе.
-c.	Проверьте подключение с помощью пинга IP-адреса интерфейса R1 G0/0/1.
-d.	Выполните show ip dhcp binding для R1 для проверки назначений адресов в DHCP.
-e.	Выполните команду show ip dhcp server statistics для проверки сообщений DHCP.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+настраиваем команду ip helper-address на G0/0/1, указав IP-адрес G0/0/0 R1.
+```
+interface GigabitEthernet0/0/1
+ip helper-address 10.0.0.1
+```
+Сохраняем текущую конфигурацию в файл загрузочной конфигурации с помощью команды ***copy running-config startup-config***.
+#### Шаг 2.	Попытка получить IP-адрес от DHCP на PC-B
+Из командной строки компьютера PC-B выполняем команду ipconfig /all.
+```
+Connection-specific DNS Suffix..: CCNA-lab.com
+   Physical Address................: 0030.F2BD.862C
+   Link-local IPv6 Address.........: FE80::230:F2FF:FEBD:862C
+   IPv6 Address....................: ::
+   IPv4 Address....................: 192.168.1.102
+   Subnet Mask.....................: 255.255.255.240
+   Default Gateway.................: ::
+                                     192.168.1.97
+   DHCP Servers....................: 10.0.0.1
+```
+Проверяем подключение с помощью пинга IP-адреса интерфейса R1 G0/0/1
+```
+C:\>ping 192.168.1.1
+Pinging 192.168.1.1 with 32 bytes of data:
+Reply from 192.168.1.1: bytes=32 time<1ms TTL=254
+Reply from 192.168.1.1: bytes=32 time<1ms TTL=254
+Reply from 192.168.1.1: bytes=32 time<1ms TTL=254
+Reply from 192.168.1.1: bytes=32 time<1ms TTL=254
+Ping statistics for 192.168.1.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+```
+Выполняем show ip dhcp binding для R1 для проверки назначений адресов в DHCP.
+```
+IP address       Client-ID/              Lease expiration        Type
+                 Hardware address
+192.168.1.6      0060.4751.1A80           --                     Automatic
+192.168.1.102    0030.F2BD.862C           --                     Automatic
+```
+В итоге мы получили на оба компьютера IP-адреса по технологии DHCP, а также получили сетевую связность между ними.
