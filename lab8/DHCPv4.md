@@ -83,15 +83,43 @@ copy running-config startup-config
 ```
 **Повторяем процедуру для второго маршрутизатора.**
 #### Шаг 4.	Настройка маршрутизации между сетями VLAN на маршрутизаторе R1
-Активируем интерфейс G0/0/1 на маршрутизаторе.
+Активируем интерфейс G0/0/1 на маршрутизаторе.    
 ```
-
+interface GigabitEthernet0/0/1
+no shutdown
 ```
-b.	Настройте подинтерфейсы для каждой VLAN в соответствии с требованиями таблицы IP-адресации. Все субинтерфейсы используют инкапсуляцию 802.1Q и назначаются первый полезный адрес из вычисленного пула IP-адресов. Убедитесь, что подинтерфейсу для native VLAN не назначен IP-адрес. Включите описание для каждого подинтерфейса.
-c.	Убедитесь, что вспомогательные интерфейсы работают.
+Настраиваем подинтерфейсы для каждой VLAN в соответствии с требованиями таблицы IP-адресации.      
+На всех субинтерфейсах включаем инкапсуляцию 802.1Q.    
+Назначаем первый полезный адрес из вычисленного пула IP-адресов.     
+Убеждаемся, что подинтерфейсу для native VLAN не назначен IP-адрес.      
+Добавляем описание для каждого подинтерфейса.     
+```
+interface GigabitEthernet0/0/1.100
+encapsulation dot1Q 100
+ip address 192.168.1.1 255.255.255.192
+description Clients
 
+interface GigabitEthernet0/0/1.200
+encapsulation dot1Q 200
+ip address 192.168.1.65 255.255.255.224
+description Management
 
-
+interface GigabitEthernet0/0/1.1000
+encapsulation dot1Q 1000
+description Native
+```
+Убеждаемся, что вспомогательные интерфейсы работают.
+```
+show ip interface brief 
+Interface                 IP-Address      OK? Method Status                Protocol 
+GigabitEthernet0/0/0      unassigned      YES unset  administratively down down 
+GigabitEthernet0/0/1      unassigned      YES unset  up                    up 
+GigabitEthernet0/0/1.100  192.168.1.1     YES manual up                    up 
+GigabitEthernet0/0/1.200  192.168.1.65    YES manual up                    up 
+GigabitEthernet0/0/1.1000 unassigned      YES unset  up                    up 
+Vlan1                     unassigned      YES unset  administratively down down
+```
+#### Шаг 5. 
 
 
 
