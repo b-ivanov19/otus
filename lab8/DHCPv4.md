@@ -346,10 +346,6 @@ IP address       Client-ID/              Lease expiration        Type
                  Hardware address
 192.168.1.6      0060.4751.1A80           --                     Automatic
 ```
-Выполняем команду ***show ip dhcp server statistics*** для проверки сообщений DHCP.
-```
-Не существует такой команды в CPT
-```
 #### Шаг 4.	Попытка получить IP-адрес от DHCP на PC-A
 Из командной строки компьютера PC-A выполняем команду ipconfig /all.
 ```
