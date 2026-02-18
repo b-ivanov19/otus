@@ -315,7 +315,7 @@ lease 2 12 30
 #### Шаг 2.	Сохраните конфигурацию.
 Сохраняем текущую конфигурацию в файл загрузочной конфигурации с помощью команды ***copy running-config startup-config***.
 #### Шаг 3.	Проверка конфигурации сервера DHCPv4
-Чтобы просмотреть сведения о пуле, выполняем команду show ip dhcp pool R1_Client_LAN.
+Чтобы просмотреть сведения о пуле, выполняем команду ***show ip dhcp pool R1_Client_LAN***.
 ```
 Pool R1_Client_LAN :
  Utilization mark (high/low)    : 100 / 0
@@ -332,12 +332,12 @@ Pool R2_Client_LAN :
  Utilization mark (high/low)    : 100 / 0
  Subnet size (first/next)       : 0 / 0 
  Total addresses                : 14
- Leased addresses               : 1
- Excluded addresses             : 1
+ Leased addresses               : 0
+ Excluded addresses             : 2
  Pending event                  : none
  1 subnet is currently in the pool
  Current index        IP address range                    Leased/Excluded/Total
- 192.168.1.97         192.168.1.97     - 192.168.1.110     1    / 1     / 14
+ 192.168.1.97         192.168.1.97     - 192.168.1.110     0    / 2     / 14
 ```
 Выполняем команду ***show ip dhcp bindings*** для проверки установленных назначений адресов DHCP.
 ```
@@ -345,11 +345,6 @@ R1#show ip dhcp binding
 IP address       Client-ID/              Lease expiration        Type
                  Hardware address
 192.168.1.6      0060.4751.1A80           --                     Automatic
-
-R2#show ip dhcp binding
-IP address       Client-ID/              Lease expiration        Type
-                 Hardware address
-192.168.1.102    0030.F2BD.862C           --                     Automatic
 ```
 Выполняем команду ***show ip dhcp server statistics*** для проверки сообщений DHCP.
 ```
@@ -381,8 +376,8 @@ Ping statistics for 192.168.1.97:
 Approximate round trip times in milli-seconds:
     Minimum = 0ms, Maximum = 0ms, Average = 0ms
 ```
-
-
+### 3. Настройка и проверка DHCP-ретрансляции на R2
+#### Шаг 1. Настройка R2 в качестве агента DHCP-ретрансляции для локальной сети на G0/0/1
 
 
 
