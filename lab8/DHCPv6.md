@@ -157,6 +157,34 @@ FastEthernet0 Connection:(default port)
 ```
 Отмечаем отсутствие DNS серверов.
 #### Шаг 2. Настройте R1 для предоставления DHCPv6 без состояния для PC-A
+a.	Создайте пул DHCP IPv6 на R1 с именем R1-STATELESS. В составе этого пула назначьте адрес DNS-сервера как 2001:db8:acad: :1, а имя домена — как stateless.com.
+Откройте окно конфигурации
+R1(config)# ipv6 dhcp pool R1-STATELESS
+R1(config-dhcp)# dns-server 2001:db8:acad::254
+R1(config-dhcp)# domain-name STATELESS.com
+b.	Настройте интерфейс G0/0/1 на R1, чтобы предоставить флаг конфигурации OTHER для локальной сети R1 и укажите только что созданный пул DHCP в качестве ресурса DHCP для этого интерфейса.
+R1(config)# interface g0/0/1
+R1(config-if)# ipv6 nd other-config-flag 
+R1(config-if)# ipv6 dhcp server R1-STATELESS
+c.	Сохраните текущую конфигурацию в файл загрузочной конфигурации.
+d.	Перезапустите PC-A.
+e.	Проверьте вывод ipconfig /all и обратите внимание на изменения.
+C:\Users\Student> ipconfig /all
+
+f.	Тестирование подключения с помощью пинга IP-адреса интерфейса G0/1 R2.
+Часть 4. Настройка сервера DHCPv6 с сохранением состояния на R1
+В части 4 настраивается R1 для ответа на запросы DHCPv6 от локальной сети на R2.
+a.	Создайте пул DHCPv6 на R1 для сети 2001:db8:acad:3:aaa::/80. Это предоставит адреса локальной сети, подключенной к интерфейсу G0/0/1 на R2. В составе пула задайте DNS-сервер 2001:db8:acad: :254 и задайте доменное имя STATEFUL.com.
+Откройте окно конфигурации
+R1(config)# ipv6 dhcp pool R2-STATEFUL
+R1(config-dhcp)# address prefix 2001:db8:acad:3:aaa::/80
+R1(config-dhcp)# dns-server 2001:db8:acad::254
+R1(config-dhcp)# domain-name STATEFUL.com
+b.	Назначьте только что созданный пул DHCPv6 интерфейсу g0/0/0 на R1.
+R1(config)# interface g0/0/0
+R1(config-if)# ipv6 dhcp server R2-STATEFUL
+Закройте окно настройки.
+Часть 5. Настройка и проверка ретрансляции DHCPv6 на R2.
 
 
 
