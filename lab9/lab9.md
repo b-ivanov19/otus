@@ -237,6 +237,79 @@ Gig0/1                       disabled     999        auto    auto  10/100BaseTX
 Gig0/2                       disabled     999        auto    auto  10/100BaseTX
 ```
 
+Шаг 4. Документирование и реализация функций безопасности порта.
+Интерфейсы F0/6 на S1 и F0/18 на S2 настроены как порты доступа. На этом шаге вы также настроите безопасность портов на этих двух портах доступа.
+a.	На S1, введите команду show port-security interface f0/6  для отображения настроек по умолчанию безопасности порта для интерфейса F0/6. Запишите свои ответы ниже.
+
+Конфигурация безопасности порта по умолчанию
+Функция	Настройка по умолчанию
+Защита портов	
+Максимальное количество записей MAC-адресов	
+Режим проверки на нарушение безопасности	
+Aging Time	
+Aging Type	
+Secure Static Address Aging	
+Sticky MAC Address	
+b.	На S1 включите защиту порта на F0 / 6 со следующими настройками:
+o	Максимальное количество записей MAC-адресов: 3
+o	Режим безопасности: restrict
+o	Aging time: 60 мин.
+o	Aging type: неактивный
+c.	Verify port security on S1 F0/6.
+S1# show port-security interface f0/6
+Port Security : Enabled
+Port Status : Secure-up
+Violation Mode : Restrict
+Aging Time : 60 mins
+Aging Type : Inactivity
+SecureStatic Address Aging : Disabled
+Maximum MAC Addresses : 3
+Total MAC Addresses : 1
+Configured MAC Addresses : 0
+Sticky MAC Addresses : 0
+Last Source Address:Vlan : 0022.5646.3411:10
+Security Violation Count : 0
+
+S1# show port-security address
+               Secure Mac Address Table
+-----------------------------------------------------------------------------
+Vlan Mac Address Type Ports Remaining Age
+                                                                   (mins)
+---- ----------- ---- ----- -------------
+  10 0022.5646.3411 SecureDynamic Fa0/6 60 (I)
+-----------------------------------------------------------------------------
+Total Addresses in System (excluding one mac per port) : 0
+Max Addresses limit in System (excluding one mac per port) : 8192
+d.	Включите безопасность порта для F0 / 18 на S2. Настройте каждый активный порт доступа таким образом, чтобы он автоматически добавлял адреса МАС, изученные на этом порту, в текущую конфигурацию.
+e.	Настройте следующие параметры безопасности порта на S2 F / 18:
+o	Максимальное количество записей MAC-адресов: 2
+o	Тип безопасности: Protect
+o	Aging time: 60 мин.
+f.	Проверка функции безопасности портов на S2 F0/18.
+S2# show port-security interface f0/18
+Port Security : Enabled
+Port Status : Secure-up
+Violation Mode : Protect
+Aging Time : 60 mins
+Aging Type : Absolute
+SecureStatic Address Aging : Disabled
+Maximum MAC Addresses : 2
+Total MAC Addresses : 1
+Configured MAC Addresses : 0
+Sticky MAC Addresses : 0
+Last Source Address:Vlan : 0022.5646.3413:10
+Security Violation Count : 0
+
+S2# show port-security address
+               Secure Mac Address Table
+-----------------------------------------------------------------------------
+Vlan Mac Address Type Ports Remaining Age
+                                                                   (mins)
+---- ----------- ---- ----- -------------
+  10 0022.5646.3413 SecureSticky Fa0/18 -
+-----------------------------------------------------------------------------
+Total Addresses in System (excluding one mac per port) : 0
+Max Addresses limit in System (excluding one mac per port) : 8192
 
 
 
