@@ -60,7 +60,14 @@ line con 0
  exec-timeout 0 0
 ```
 Проверяем текущую конфигурацию на R1, используя команду ***show ip interface brief***.   
-Убедитесь, что IP-адресация и интерфейсы находятся в состоянии up / up (при необходимости устраните неполадки).
+```
+Interface              IP-Address      OK? Method Status                Protocol 
+GigabitEthernet0/0/0   unassigned      YES unset  administratively down down 
+GigabitEthernet0/0/1   192.168.10.1    YES manual up                    up 
+Loopback0              10.10.1.1       YES manual up                    up 
+Vlan1                  unassigned      YES unset  administratively down down
+```
+IP-адресация и интерфейсы находятся в состоянии up / up.
 
 
 
