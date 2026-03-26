@@ -104,6 +104,7 @@ Neighbor ID     Pri   State           Dead Time   Address         Interface
 ```
 *Маршрутизатор R2 является DR, маршрутизатор R1 является BDR.     
 Критериями отбора являются приоритеты, в зависимости от интерфейсов устройств. Маршрутизатор с наибольшим приоритетом становится DR, маршрутизатор со вторым по величине приоритетом — BDR. В случае равенстра приоритетов сравниваются Router-ID. Маршрутизатор с наибольшим RID становится DR, второй по величине — BDR.*   
+      
 На R1 выполняем команду ***show ip route ospf***, чтобы убедиться, что сеть R2 Loopback1 присутствует в таблице маршрутизации. 
 ```
      192.168.1.0/32 is subnetted, 1 subnets
@@ -127,38 +128,76 @@ ip ospf priority 50
 Neighbor ID     Pri   State           Dead Time   Address         Interface
 1.1.1.1          50   FULL/DR         00:00:38    10.53.0.1       GigabitEthernet0/0/1
 ```
-Настраиваем таймеры OSPF на G0/0/1 каждого маршрутизатора для таймера приветствия, составляющего 30 секунд.
+Настраиваем таймеры OSPF на G0/0/1 каждого маршрутизатора для таймера приветствия, составляющего 30 секунд, а также dead-interval.    
 ```
 interface gigabitethernet 0/0/1
 ip ospf hello-interval 30
+ip ospf dead-interval 120
 ```
 На R1 настраиваем статический маршрут по умолчанию, который использует интерфейс Loopback 1 в качестве интерфейса выхода.   
 ```
 ip route 0.0.0.0 0.0.0.0 Loopback1
 ```
 *Ошибка «Default route without gateway, if not a point-to-point interface, may impact performance» в Cisco возникает при настройке маршрута по умолчанию на интерфейсе, который не является интерфейсом point-to-point (p2p). Это предупреждение указывает на то, что маршрут не указывает адрес следующего хопа.*   
+       
 Распространяем маршрут по умолчанию в OSPF. 
 ```
 router ospf 56
 default-information originate
 ```
-добавьте конфигурацию, необходимую для OSPF для обработки R2 Loopback 1 как сети точка-точка. Это приводит к тому, что OSPF объявляет Loopback 1 использует маску подсети интерфейса.
-
-
-
-e.	Только на R2 добавьте конфигурацию, необходимую для предотвращения отправки объявлений OSPF в сеть Loopback 1.
-f.	Измените базовую пропускную способность для маршрутизаторов. После этой настройки перезапустите OSPF с помощью команды clear ip ospf process . Обратите внимание на сообщение консоли после установки новой опорной полосы пропускания.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Добавляем конфигурацию, необходимую для OSPF для обработки R2 Loopback 1 как сети точка-точка. Это приводит к тому, что OSPF объявляет Loopback 1 использует маску подсети интерфейса.
+```
+interface loopback 1
+ip ospf network point-to-point
+```
+Только на R2 добавляем конфигурацию, необходимую для предотвращения отправки объявлений OSPF в сеть Loopback 1.
+```
+router ospf 56
+passive-interface loopback 1
+```
+Изменяем базовую пропускную способность для маршрутизаторов.    
+```
+router ospf 56
+auto-cost reference-bandwidth 1000
+```
+После этой настройки перезапускаем OSPF с помощью команды ***clear ip ospf process*** .      
+Обратите внимание на сообщение консоли после установки новой опорной полосы пропускания - необходимо установить одинаковую пропускную способность на обоих маршрутизаторах.    
+### Шаг 2. Убедитесь, что оптимизация OSPFv2 реализовалась.
+Выполняем команду ***show ip ospf interface g0/0/1*** на R1, чтобы убедиться, что приоритет интерфейса установлен равным 50, а временные интервалы — Hello 30, Dead 120, а тип сети по умолчанию — Broadcast
+```
+GigabitEthernet0/0/1 is up, line protocol is up
+  Internet address is 10.53.0.1/24, Area 0
+  Process ID 56, Router ID 1.1.1.1, Network Type BROADCAST, Cost: 10
+  Transmit Delay is 1 sec, State DR, Priority 50
+  Designated Router (ID) 1.1.1.1, Interface address 10.53.0.1
+  Backup Designated Router (ID) 2.2.2.2, Interface address 10.53.0.2
+  Timer intervals configured, Hello 30, Dead 120, Wait 120, Retransmit 5
+    Hello due in 00:00:08
+  Index 1/1, flood queue length 0
+  Next 0x0(0)/0x0(0)
+  Last flood scan length is 1, maximum is 1
+  Last flood scan time is 0 msec, maximum is 0 msec
+  Neighbor Count is 1, Adjacent neighbor count is 1
+    Adjacent with neighbor 2.2.2.2  (Backup Designated Router)
+  Suppress hello for 0 neighbor(s)
+```
+На R1 выполняем команду ***show ip route ospf***, чтобы убедиться, что сеть R2 Loopback1 присутствует в таблице маршрутизации. 
+```
+O    192.168.1.0 [110/10] via 10.53.0.2, 00:05:54, GigabitEthernet0/0/1
+```
+*Обращаем внимание на разницу в метрике между этим выводом и предыдущим выводом - это связано с изменением настройки базовой пропускной способности.    
+Также обращаем внимание, что маска теперь составляет 24 бита, в отличие от 32 битов, ранее объявленных, так как OSPF использует маску интерфейса, а не стандартную маску для хост-маршрутов.*
+     
+Вводим команду ***show ip route ospf*** на маршрутизаторе R2. 
+```
+O*E2 0.0.0.0/0 [110/1] via 10.53.0.1, 00:01:21, GigabitEthernet0/0/1
+```
+Единственная информация о маршруте OSPF - распространяемый по умолчанию маршрут R1.   
+Запускаем Ping до адреса интерфейса R1 Loopback 1 из R2. 
+```
+R2#ping 172.16.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 172.16.1.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 0/0/0 ms
+```
