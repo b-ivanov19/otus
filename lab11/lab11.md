@@ -404,8 +404,8 @@ ip access-group OPERATIONS_OUT out
 | PC-B | Ping | 10.30.0.10 | Сбой |
 | PC-B | Ping | 10.20.0.1 | Успех - должен быть сбой |
 | PC-B | Ping | 172.16.1.1 | Успех |
-| PC-B | HTTPS | 10.20.0.1 | Сбой |
-| PC-B | HTTPS | 172.16.1.1 | Успех |
+| PC-B | HTTPS | 10.20.0.1 |   |
+| PC-B | HTTPS | 172.16.1.1 |   |
 | PC-B | SSH | 10.20.0.4 | Сбой |
 | PC-B | SSH | 172.16.1.1 | Успех |
     
