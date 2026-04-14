@@ -432,7 +432,7 @@ ip access-group SALES_OUT in
 ```
 Также по результатам тестирования выяснилось, что правило MANAGEMENT_IN является избыточным, поэтому его просто отключаем.
 ```
-interface gigabitethernet 0/0/1.40
+interface gigabitethernet 0/0/1.20
 no ip access-group MANAGEMENT_IN in
 ```
 Проверяем еще раз работу политик безопасности: 
