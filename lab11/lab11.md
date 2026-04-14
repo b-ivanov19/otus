@@ -420,8 +420,35 @@ permit ip any any
 interface gigabitethernet 0/0/1.20
 ip access-group MANAGEMENT_IN in
 ```
+в итоге пинг из сети Sales в сеть Management по-прежнему походит.
+#### Исправление ошибок
+В результате анализа и после тестирования было выявлено, что правило ACL SALES_OUT было применено на выход, а нужно было его применить на вход интерфейса G0/0/1.40 маршрутизатора R1
+```
+interface gigabitethernet 0/0/1.40
+no ip access-group SALES_OUT out
+exit
+interface gigabitethernet 0/0/1.40
+ip access-group SALES_OUT in
+```
+Также по результатам тестирования выяснилось, что правило MANAGEMENT_IN является избыточным, поэтому его просто отключаем.
+```
+interface gigabitethernet 0/0/1.40
+no ip access-group MANAGEMENT_IN in
+```
+Проверяем еще раз работу политик безопасности: 
+| От | Протокол | Назначение | Результат |
+| --- | --- | --- | --- |
+| PC-A | Ping | 10.40.0.10 | Сбой |
+| PC-A | Ping | 10.20.0.1 | Успех |
+| PC-B | Ping | 10.30.0.10 | Сбой |
+| PC-B | Ping | 10.20.0.1 | Cбой |
+| PC-B | Ping | 172.16.1.1 | Успех |
+| PC-B | HTTPS | 10.20.0.1 |   |
+| PC-B | HTTPS | 172.16.1.1 |   |
+| PC-B | SSH | 10.20.0.4 | Сбой |
+| PC-B | SSH | 172.16.1.1 | Успех 
 
-
+Убеждаемся, что политики безопасности отрабатывают как положено.
 
 
 
