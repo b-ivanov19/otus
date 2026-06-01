@@ -4,10 +4,10 @@
 ### Таблица VLAN
 | VLAN | Назначение | Подсеть | Маска | Шлюз по умолчанию | 
 |------|-----------|----------|--------------|------------------|
-10|Бухгалтерия (BUH) | 192.168.10.0/24 | 255.255.255.0 | 192.168.10.1
-20|Маркетинг (MARKETING) | 192.168.20.0/24 | 255.255.255.0 | 192.168.20.1	
-30|IT отдел (IT) | 192.168.30.0/24 | 255.255.255.0 | 192.168.30.1		
-40|Руководство (MANAGEMENT) | 192.168.40.0/24 | 255.255.255.0 | 192.168.40.1	
+10|Бухгалтерия (BUH) | 192.168.10.0/24 | 255.255.255.0 | 192.168.10.254
+20|Маркетинг (MARKETING) | 192.168.20.0/24 | 255.255.255.0 | 192.168.20.254	
+30|IT отдел (IT) | 192.168.30.0/24 | 255.255.255.0 | 192.168.30.254		
+40|Руководство (MANAGEMENT) | 192.168.40.0/24 | 255.255.255.0 | 192.168.40.254	
 100|Веб сервер (WEB_SERVER) | 192.168.100.0/24 | 255.255.255.0 | 192.168.100.1	
 99|VLAN для неиспользуемых портов (ParkingLot)  | - | - | - |
 999|Native VLAN (NATIVE) | - | - | - |
@@ -27,9 +27,9 @@
 ### Часть 1. Создание сети и настройка основных параметров устройства
 #### Шаг 1. Создание сети
 Создаем трехуровневую сеть: 
-- на уровне ядра сети используем два коммутатора, соединенные между собой двумя линками. Коммутаторы ядра подключены к коммутаторам уровня распределения также двумя линками каждый - для отказоустойчивости и обеспечения большей пропускной способности. К обоим коммутаторам ядра подключен роутер для выхода в интернет. Выход в интернет имитирует веб-сервер. 
-- на уровне распределения используются L3 коммутаторы соединенные между собой гигабитной линией, каждый коммутатор подключен к каждому коммутатору уровня доступа.
-- на уровне доступа используются собственные коммутаторы для каждого отдела. 
+- на уровне ядра сети используем два коммутатора (S1 и S2), соединенные между собой двумя линками. Коммутаторы ядра подключены к коммутаторам уровня распределения также двумя линками каждый - для отказоустойчивости и обеспечения большей пропускной способности. К обоим коммутаторам ядра подключен роутер для выхода в интернет. Выход в интернет имитирует веб-сервер. 
+- на уровне распределения используются L3 коммутаторы (S3 и S4) соединенные между собой гигабитной линией, каждый коммутатор подключен к каждому коммутатору уровня доступа.
+- на уровне доступа используются собственные коммутаторы для каждого отдела (S5, S6, S7, S8).     
 Подключаем устройства и подсоединяем необходимые кабели.
 #### Шаг 2. Производим базовую настройку маршрутизатора.
 Входим в привилегированный режим.    
@@ -109,7 +109,125 @@ Vlan 999
 name VLAN_NATIVE
 exit
 ```
+**Повторяем процедуру для всех коммутаторов.**
+#### Шаг 2. Настраиваем транки и порты доступа, избыточность на уровне ядра.
+На коммутаторе S1 настраиваем порт для подключения DNS-сервера    
+```
+interface fa0/24
+switchport access vlan 100
+switchport mode access
+spanning-tree portfast
+```
+Настраиваем EtherChannel между коммутаторами S1 и S2:    
+```
+interface range fa0/5 - fa0/6
+channel-group 1 mode active
+interface Port-channel1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,40,100,999
+switchport trunk native vlan 999
+```
+Настраиваем интерфейсы для подключения коммутатора S3:    
+```
+interface range fa0/10 - fa0/11
+channel-group 2 mode active
+interface Port-channel2
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,40,100,999
+switchport trunk native vlan 999
+```
+**Аналогично настраиваем коммутатор S2, исключая порт доступа к DNS серверу**
+#### Шаг 3. Настраиваем транки и порты доступа, избыточность на уровне распределения.
+Настраиваем соединение между коммутаторами уровня распределения (S3 и S4)     
+```
+interface g0/1
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,40,100,999
+switchport trunk native vlan 999
+```
+Настраиваем подключение к S1 (через EtherChannel)
+```
+interface range fa0/10 - fa0/11
+channel-group 1 mode active
+interface Port-channel1
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,40,100,999
+switchport trunk native vlan 999
+```
+Настраиваем порты для коммутаторов доступа
+```
+interface fa0/1
+switchport mode access
+switchport access vlan 10
+spanning-tree portfast
+interface fa0/2
+switchport mode access
+switchport access vlan 20
+spanning-tree portfast
+interface fa0/3
+switchport mode access
+switchport access vlan 30
+spanning-tree portfast
+interface fa0/4
+switchport mode access
+switchport access vlan 40
+spanning-tree portfast
+```
+**Аналогично настраиваем коммутатор S4**
+#### Шаг 4. Настраиваем транки и порты доступа, избыточность на уровне доступа.
+Настраиваем соединения с S3 и S4 на коммутаторе S5:
+```
+interface fa0/1
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,40,999
+switchport trunk native vlan 999
+interface fa0/2
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,40,999
+switchport trunk native vlan 999
+```
+Настраиваем порты для пользовательских ПК:
+```
+interface fa0/16
+switchport mode access
+switchport access vlan 10
+spanning-tree portfast
+```
+**Аналогично настраиваем коммутаторы S6-S8**
+#### Шаг 5. Настраиваем роутер R1
+Настраиваем порт для подключения веб‑сервера
+```
+interface g0/2
+ip address 10.215.32.34 255.255.255.252
+no shutdown
+```
+Настраиваем подсети для VLAN через подинтерфейсы
+```
+interface g0/0
+no ip address
+no shutdown
 
+interface g0/0.10
+encapsulation dot1Q 10
+ip address 192.168.10.254 255.255.255.0
+interface g0/0.20
+encapsulation dot1Q 20
+ip address 192.168.20.254 255.255.255.0
+interface g0/0.30
+encapsulation dot1Q 30
+ip address 192.168.30.254 255.255.255.0
+interface g0/0.40
+encapsulation dot1Q 40
+ip address 192.168.40.254 255.255.255.0
+interface g0/0.100
+encapsulation dot1Q 100
+ip address 192.168.100.1 255.255.255.0
+interface g0/0.999
+encapsulation dot1Q 999
+```
+Включаем маршрутизацию с помощью команды ***ip routing***.
 
 
 
