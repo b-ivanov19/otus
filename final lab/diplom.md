@@ -627,7 +627,7 @@ Reply from 10.215.32.33: bytes=32 time=1ms TTL=127
 Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
 Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
 ```
-Связь восстанавливается быстро.
+Связь восстанавливается быстро.     
 5. При полном отключении R1 остается доступен резервный шлюз HSRP, развернутый на коммутаторе S2
 ```
 C:\>ping -t 192.168.20.254
@@ -643,7 +643,8 @@ Ping statistics for 192.168.20.254:
 Approximate round trip times in milli-seconds:
     Minimum = 0ms, Maximum = 1ms, Average = 0ms
 ```
-6. Пробуем доступ из VLAN 10 в VLAN 30
+#### Шаг 3. Проверка ACL
+Пробуем доступ из VLAN 10 в VLAN 30
 ```
 C:\> ping 192.168.30.55
 Pinging 192.168.30.55 with 32 bytes of data:
