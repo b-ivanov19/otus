@@ -120,29 +120,39 @@ spanning-tree portfast
 ```
 Настраиваем EtherChannel между коммутаторами S1 и S2:    
 ```
+interface range fa0/5 - fa0/6
+channel-group 1 mode active
+no shutdown
+exit
 interface Port-channel1
-switchport trunk encapsulation dot1q
+switchport trunk encapsulation dot1q 
 switchport mode trunk
 switchport trunk allowed vlan 10,20,30,40,100,999
 switchport trunk native vlan 999
-no shutdown
-exit
-interface range fa0/5 - fa0/6
-channel-group 1 mode active
 no shutdown
 exit
 ```
 Настраиваем интерфейсы для подключения коммутатора S3:    
 ```
+interface range fa0/10 - fa0/11
+channel-group 2 mode active
+no shutdown
+exit
 interface Port-channel2
-switchport trunk encapsulation dot1q
+switchport trunk encapsulation dot1q 
 switchport mode trunk
 switchport trunk allowed vlan 10,20,30,40,100,999
 switchport trunk native vlan 999
 no shutdown
 exit
-interface range fa0/10 - fa0/11
-channel-group 2 mode active
+```
+Настраиваем интерфейс для подключения маршрутизатора R1
+```
+interface g0/1
+switchport trunk encapsulation dot1q 
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,40,100,999
+switchport trunk native vlan 999
 no shutdown
 exit
 ```
@@ -164,30 +174,22 @@ Number of aggregators:           2
 
 Group  Port-channel  Protocol    Ports
 ------+-------------+-----------+----------------------------------------------
-
-1      Po1(SD)           LACP   Fa0/5(I) Fa0/6(I) 
+1      Po1(SU)           LACP   Fa0/5(P) Fa0/6(P) 
 2      Po2(SD)           LACP   Fa0/10(I) Fa0/11(I) 
 ```
 #### Шаг 3. Настраиваем транки и порты доступа, избыточность на уровне распределения.
-Настраиваем соединение между коммутаторами уровня распределения (S3 и S4)     
-```
-interface g0/1
-switchport mode trunk
-switchport trunk allowed vlan 10,20,30,40,100,999
-switchport trunk native vlan 999
-```
 Настраиваем подключение к S1 (через EtherChannel)
 ```
-interface Port-channel1
-switchport trunk encapsulation dot1q
+interface range fa0/10 - fa0/11
+channel-group 1 mode active
+no shutdown
+exit
+interface Port-channel 1
+switchport trunk encapsulation dot1q 
 switchport mode trunk
 switchport trunk allowed vlan 10,20,30,40,100,999
 switchport trunk native vlan 999
-spanning-tree portfast trunk
-no shutdown
-exit
-interface range fa0/10 - fa0/11
-channel-group 1 mode active
+spanning-tree guard root 
 no shutdown
 ```
 Настраиваем подключение между S3 и S4
@@ -197,15 +199,17 @@ switchport trunk encapsulation dot1q
 switchport mode trunk
 switchport trunk allowed vlan 10,20,30,40,100,999
 switchport trunk native vlan 999
-spanning-tree portfast trunk
+spanning-tree guard root
 no shutdown
 ```
 Настраиваем порты для коммутаторов доступа
 ```
 interface range fa0/1-4
+switchport trunk encapsulation dot1q
 switchport mode trunk
 switchport trunk allowed vlan 10,20,30,40,100,999
 switchport trunk native vlan 999
+spanning-tree guard root
 no shutdown
 ```
 **Аналогично настраиваем коммутатор S4**
@@ -216,17 +220,20 @@ interface fa0/1
 switchport mode trunk
 switchport trunk allowed vlan 10,20,30,40,100,999
 switchport trunk native vlan 999
+spanning-tree guard root
 no shutdown
 exit
 interface fa0/2
 switchport mode trunk
 switchport trunk allowed vlan 10,20,30,40,100,999
 switchport trunk native vlan 999
+spanning-tree guard root
 no shutdown
 exit
 ```
 Настраиваем порты для пользовательских ПК:
 ```
+spanning-tree portfast bpduguard default
 interface fa0/16
 switchport mode access
 switchport access vlan 10
@@ -345,18 +352,18 @@ Ping statistics for 192.168.30.55:
 Approximate round trip times in milli-seconds:
     Minimum = 0ms, Maximum = 12ms, Average = 7ms
 ```
-#### Шаг 2. Настраиваем OSPF на коммутаторах уровня распределения
+#### Шаг 2. Настраиваем OSPF 
 Включаем маршрутизацию с помощью команды ***ip routing***.   
 На коммутаторе S3 прописываем следующие настройки:    
 1. Создаем SVI для каждого VLAN
 ```
 interface Vlan10
-ip address 192.168.10.4 255.255.255.0
+ip address 192.168.10.3 255.255.255.0
 description VLAN_BUH
 no shutdown
 ```
-**Повторяем для VLAN 20, 30, 40**     
-2. Задаем настройки OSPF
+**Повторяем для VLAN 20, 30, 40, 100, 999**     
+2. Задаем настройки OSPF, включаем OSPF на интерфейсах VLAN
 ```
 router ospf 1
 router-id 3.3.3.3
@@ -365,9 +372,9 @@ network 192.168.20.0 0.0.0.255 area 0
 network 192.168.30.0 0.0.0.255 area 0
 network 192.168.40.0 0.0.0.255 area 0
 network 192.168.100.0 0.0.0.255 area 0
-network 192.168.999.0 0.0.0.255 area 0
+passive-interface Vlan999
 ```
-**Аналогичные настройки применяем на коммутаторе S4**      
+**Аналогичные настройки применяем на всех остальных коммутаторах и на R1**      
 Сохраняем конфигурации устройств с помощью команды ***copy running-config startup-config***.     
 #### Шаг 3. Настраиваем HSRP для отказоустойчивости шлюзов
 На маршрутизаторе R1 применяем следующие настройки: 
@@ -442,12 +449,6 @@ default-router 192.168.10.254
 dns-server 192.168.100.10
 domain-name otus.ru
 ```  
-Настраиваем интерфейсы VLAN на коммутаторе
-```
-interface Vlan10
-ip address 192.168.10.4 255.255.255.0
-no shutdown
-```
 **Повторяем для VLAN 20, 30, 40**    
 **Аналогично настраиваем резервный DHCP-сервер на коммутаторе S4** 
 #### Шаг 2. Настраиваем Web-сервер и DNS-сервер
@@ -483,7 +484,7 @@ Approximate round trip times in milli-seconds:
 Включаем DHCP Snooping на коммутаторах S3 и S4
 ```
 ip dhcp snooping
-ip dhcp snooping vlan 10,20,40
+ip dhcp snooping vlan 10,20,30,40,100
 ```
 Настраиваем доверенные порты - к коммутатору ядра и второму коммутатору распределения
 ```
@@ -492,6 +493,25 @@ ip dhcp snooping trust
 exit
 interface GigabitEthernet0/2
 ip dhcp snooping trust
+```
+Включаем DHCP Snooping на коммутаторах S5 - S8
+```
+ip dhcp snooping
+ip dhcp snooping vlan 10,20,30,40,100
+```
+Настраиваем доверенные порты - к коммутаторам уровня распределения
+```
+interface GigabitEthernet0/1
+ip dhcp snooping trust
+exit
+interface GigabitEthernet0/2
+ip dhcp snooping trust
+```
+Отключаем DHCP Snooping на портах доступа
+```
+interface fa0/16
+no ip dhcp snooping trust
+exit
 ```
 #### Шаг 2. Настройка Port Security на портах доступа
 Настраиваем Port Security на всех портах, к которым подключаются конечные устройства - коммутаторы уровня доступа S5 - S8
@@ -502,33 +522,142 @@ switchport port-security maximum 2    (так как есть связки IP-т
 switchport port-security violation restrict
 ```
 #### Шаг 3. Настройка ACL 
-Нам необходимо запретить трафик из VLAN 10 и 20 до VLAN 30
+Нам необходимо запретить трафик из VLAN 10 и 20 до VLAN 30. Настраиваем ACL на коммутаторе R1
 ```
 ip access-list extended Block_VLAN10-20_to_VLAN30
 deny ip 192.168.10.0 0.0.0.255 192.168.30.0 0.0.0.255
 deny ip 192.168.20.0 0.0.0.255 192.168.30.0 0.0.0.255
 permit ip any any
 exit
-interface Vlan 10
+interface g0/0.30
 ip access-group Block_VLAN10-20_to_VLAN30 out
 exit
-interface Vlan 20
-ip access-group Block_VLAN10-20_to_VLAN30 out
+```
+Ограничим доступ к устройствам по SSH из всех подсетей, кроме VLAN 30 - отдела ИТ. Настраиваем на всех сетевых устройствах.
+```
+ip access-list standard SSH_ACCESS
+permit 192.168.30.0 0.0.0.255
+deny any
+exit
 ```
 #### Шаг 4. Настройка всех сетевых устройств для доступа по SSH
-Создаем локального пользователя с именем пользователя SSHadmin и зашифрованным паролем $cisco123!
-Используем ccna-lab.com в качестве доменного имени.
-Генерируем криптоключи с помощью 1024 битного модуля.
-Включаем SSH версии 2.
-Настраиваем первые пять линий VTY на каждом устройстве, чтобы поддерживать только SSH-соединения и с локальной аутентификацией.
+Создаем локального пользователя с именем пользователя SSHadmin и зашифрованным паролем $cisco123!    
+Используем otus.ru в качестве доменного имени.     
+Генерируем криптоключи с помощью 1024 битного модуля.    
+Включаем SSH версии 2.      
+Устанавливаем тайм-аут сессии и ограничиваем количество попыток аутентификации.    
+Настраиваем первые пять линий VTY на каждом устройстве, чтобы поддерживать только SSH-соединения и с локальной аутентификацией.     
 ```
 username SSHadmin secret $cisco123!
-ip domain-name ccna-lab.com
+ip domain-name otus.ru
 crypto key generate rsa
 How many bits in the modulus [512]: 1024
 ip ssh version 2
+ip ssh time-out 300
+ip ssh authentication-retries 3
 line vty 0 4
 transport input ssh
+access-class SSH_ACCESS in
 login local
 ```
-7. Проверка и тестирование доступности и отказоустойчивости сети
+#### Шаг 5. Отключаем все неиспользуемые порты
+Отключаем неиспользуемые порты и помещаем их в VLAN ParkingLot 
+```
+S1 и S2:
+interface range fa0/1-4, fa0/7-9, fa0/12-23, g0/2
+switchport mode access
+switchport access vlan 99
+shutdown
+
+S3 и S4:
+interface range fa0/5-9, fa0/12-24, g0/2
+switchport mode access
+switchport access vlan 99
+shutdown
+
+S5 - S8:
+interface range fa0/3-15, fa0/17-24, g0/1-2
+switchport mode access
+switchport access vlan 99
+shutdown
+```
+### Часть7. Проверка и тестирование доступности и отказоустойчивости сети
+#### Шаг 1. Проверка связности ПК между собой
+Запускаем пинг между ПК из VLAN 10 и VLAN 40
+```
+C:\> ping 192.168.40.21
+Pinging 192.168.40.21 with 32 bytes of data:
+Request timed out.
+Reply from 192.168.40.21: bytes=32 time=20ms TTL=127
+Reply from 192.168.40.21: bytes=32 time<1ms TTL=127
+Reply from 192.168.40.21: bytes=32 time=10ms TTL=127
+Ping statistics for 192.168.40.21:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 20ms, Average = 10ms
+```
+#### Шаг 2. Проверка отказоустойчивости
+1. Отключаем основной линк между коммутаторами уровней доступа и распределения
+```
+C:\>ping -t 192.168.100.10
+Pinging 192.168.100.10 with 32 bytes of data:
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.100.10: bytes=32 time=27ms TTL=127
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.100.10: bytes=32 time<1ms TTL=127
+```
+При отключении линка переключение на резервный коммутатор происходит настолько быстро, что даже не прерывается пинг.     
+2. Отключаем линк между коммутаторами уровня распределения - ничего не происходит, пинг продолжается.    
+3. Отключаем один линк между коммутатором S3 уровня распределения и коммутатором S1 ядра - пинг не прерывается.    
+4. Отключаем линк между коммутатором S2 и маршрутизатором R1
+```
+C:\>ping -t 10.215.32.33
+Pinging 10.215.32.33 with 32 bytes of data:
+Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
+Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
+Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
+Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
+Reply from 192.168.20.5: Destination host unreachable.
+Reply from 10.215.32.33: bytes=32 time=1ms TTL=127
+Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
+Reply from 10.215.32.33: bytes=32 time<1ms TTL=127
+```
+Связь восстанавливается быстро.
+5. При полном отключении R1 остается доступен резервный шлюз HSRP, развернутый на коммутаторе S2
+```
+C:\>ping -t 192.168.20.254
+Pinging 192.168.20.254 with 32 bytes of data:
+Reply from 192.168.20.254: bytes=32 time=1ms TTL=255
+Reply from 192.168.20.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.20.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.20.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.20.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.20.254: bytes=32 time<1ms TTL=255
+Ping statistics for 192.168.20.254:
+    Packets: Sent = 6, Received = 6, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+```
+6. Пробуем доступ из VLAN 10 в VLAN 30
+```
+C:\> ping 192.168.30.55
+Pinging 192.168.30.55 with 32 bytes of data:
+Reply from 192.168.10.1: Destination host unreachable.
+Reply from 192.168.10.1: Destination host unreachable.
+Reply from 192.168.10.1: Destination host unreachable.
+Reply from 192.168.10.1: Destination host unreachable.
+Ping statistics for 192.168.30.55:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+```
+Доступ заблокирован правилами ACL
+
+
+### ИТОГИ
+Мне удалось реализовать трехуровневую отказоустойчивую схему небольшого офиса с потенциальной возможностью масштабирования. В ходе работы были реализованы многие технологии, пройденные во время курса.
+
+
